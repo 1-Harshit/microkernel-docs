@@ -113,7 +113,7 @@ Unlike traditional operating systems, microkernels do not provide any typical OS
 
 Microkernels also include a limited set of well-defined core kernel objects. These objects run in privileged mode and are responsible for providing basic services, including an entry point for interrupt handling, IPC, basic virtual memory management, thread management, and scheduling. These are the only functionalities provided by the kernel. The rest of the services are provided by the components, as shown in Figure~\ref{fig:microsemantic}.
 
-\subsubsection{Build System}
+\subsubsection{Booting System}
 As the components and kernel objects are complex and involved, they need to be configured before the system boots up and sent to appropriate locations in memory. This is the responsibility of the build system, which configures the components and kernel objects and sets metadata for the components.
 
 
@@ -211,6 +211,34 @@ System calls are the means by which a user-level application interacts with the 
 	\item A microkernel may also need some thread management system calls, such as create thread, delete thread, etc.
 	\item Syscalls are also implemented to manage virtual memory, such as map, unmap, etc. But a very elementary virtual memory management is implemented in the kernel. The rest of the virtual memory management is implemented in the components, accessed by a IPC call.
 \end{itemize}
+
+\subsection{Inter Process Communication}
+Interporcess communication is possibily the most crutial and most discussed topic in microkernel as practicaly everything is an IPC. IPC is implemeted as a Syscall in seL4. Components must be granted proper access rights at build time to invoke IPC to propoer component. The IPC mechanism in seL4 is based on the follwing: IPC buffer, IPC endpoint, and IPC call.
+
+\subsubsection{IPC Buffer}
+When a thread wants to send a message to another thread via IPC, it first needs to prepare a message in a buffer. The buffer is allocated from the thread's own memory space, and the message is copied into it. The sender then makes a system call to the kernel to initiate the IPC. The size of the buffer is typically small, which limits the size of messages that can be sent via IPC. However, this design choice makes the IPC mechanism more efficient, as there is no need for dynamic allocation of memory. The Kernel provides support for secure IPC communication by providing capabilities that allow only authorized threads to access a specific buffer.
+
+Alternatively, the messages can be stored in a global buffer shared by all threads. This is the approach taken by the L4 microkernel. In this case, the kernel must ensure that the messages are not overwritten by other threads.  This approach is more efficient than the previous one. However, it is less secure, as any thread can access the buffer.
+
+
+\subsubsection{IPC Endpoint}
+IPC endpoint is a kernel object that represents a communication channel between two threads. It is the basic primitive used for inter-process communication (IPC) in seL4. The endpoint is used to send and receive messages between the threads. When a thread creates an endpoint, it gets a capability that allows it to access the endpoint. This capability can be used to send and receive messages through the endpoint. When a message is sent, the kernel copies the message into the endpoint's buffer and delivers it to the destination thread. When a message is received, the kernel copies the message from the endpoint's buffer into the receiver's buffer.
+
+\subsubsection{IPC Call}
+IPC call is implemented as a system call. When a thread wants to initiate an IPC communication with another thread, it makes an IPC system call to the seL4 kernel. The IPC system call takes several arguments, including the capability to the endpoint, the message to be sent, and the length of the message. The kernel provides several different IPC system calls with different semantics, such as blocking and non-blocking variants, as well as variants that allow the calling thread to wait for multiple endpoints at once.
+
+\subsection{Virtual Memory Management}
+In the seL4 microkernel, virtual memory management is not provided beyond kernel primitives for manipulating hardware paging structures. Users must provide services for creating intermediate paging structures, as well as for mapping and unmapping pages.
+
+Although users are free to define their own address space layout, there is one restriction: the seL4 kernel claims the high part of the virtual memory range, typically 0xe0000000 and above on most 32-bit platforms.
+
+During the boot process, the seL4 kernel initializes the root task with a top-level hardware virtual memory object, referred to as a VSpace. Once all of the intermediate paging structures have been mapped for a specific virtual address range, physical frames can be mapped into that range by invoking the frame capability.
+
+Overall, the seL4 microkernel provides basic primitives for hardware-level virtual memory management, while leaving higher-level management to user-level services. This allows users to define their own virtual memory layout and implement customized management schemes, while retaining the security and performance benefits of the seL4 kernel.
+\subsection{Interrupts}
+In the seL4 microkernel, the root task is initially provided with a single capability that grants access to all interrupt (irq) numbers in the system. Components can register themselves to receive interrupts by communicating with the seL4 kernel, which manages the interrupt handling mechanism. When an interrupt occurs, the kernel sends an IPC message to the registered component. The component can then handle the interrupt and send a reply back to the kernel.
+
+\section{Build System}
 
 
 \begin{figure*} % Double column using figure`*`
