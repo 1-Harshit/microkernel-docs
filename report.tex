@@ -240,7 +240,7 @@ Overall, the seL4 microkernel provides basic primitives for hardware-level virtu
 \subsection{Interrupts}
 In the seL4 microkernel, the root task is initially provided with a single capability that grants access to all interrupt (irq) numbers in the system. Components can register themselves to receive interrupts by communicating with the seL4 kernel, which manages the interrupt handling mechanism. When an interrupt occurs, the kernel sends an IPC message to the registered component. The component can then handle the interrupt and send a reply back to the kernel.
 
-\section{Booting System}
+\section{Boot System}
 
 Due to the complexity and interdependence of the components and kernel objects in the seL4 microkernel, they must be properly configured and placed in memory before the system can boot up. This task falls under the responsibility of the boot system, which is responsible for configuring the components and kernel objects, as well as setting metadata for the components.
 
@@ -253,6 +253,21 @@ The root server in seL4 microkernel provides a centralized resource management s
 The idle server, just like monolithic kernels, is a specialized thead that is responsible for managing system health and reducing power consumption. When no user-level process is scheduled for execution, the idle server remains idle, allowing the system to conserve power and reduce resource consumption.
 
 \section{Essential Blocks}
+To set up a functional microkernel, there are a few bare minimum requirements that need to be met. These include:
+\begin{itemize}
+	\item \textbf{Boot System:} A build system is required to configure the components and kernel objects and set metadata for the components. This step is crucial for ensuring that all necessary components are properly configured and initialized before booting up the system.
+	
+	\item \textbf{Syscall:} A system call interface is necessary for user-level applications to interact with the kernel. The system call interface provides a set of functions that are called by user-level applications to request kernel services such as IPC.
+	
+	\item \textbf{Inter Process Communication (IPC):} IPC is essential for enabling components to communicate with each other and for coordinating system services.
+	
+	\item \textbf{Virtual Memory:} Virtual memory management is required to provide each user-level application with its own isolated address space. This ensures that applications cannot access each other's memory and provides a mechanism for protecting the system from rogue applications. This is needed atleast some basic implementation of same.
+	
+	\item \textbf{Two or more components:} Finally, to create a functional microkernel system, there must be at least two components that are properly configured and initialized. These components are responsible for handling various system services and is also the application user wants to run on system.
+
+\end{itemize}
+	
+Each of these requirements plays a critical role in the operation of a microkernel-based system. Without these basic components in place, it would not be possible to create a stable and functional system.
 
 \begin{figure*} % Double column using figure`*`
 	\includegraphics[width=\linewidth]{example.png}
@@ -262,12 +277,46 @@ The idle server, just like monolithic kernels, is a specialized thead that is re
 
 \section{View of a microkernel System}
 
+Suppose we have an application that requires Disk I/O, File Server, and Console to be implemented in a microkernel architecture. To set up this system, we need the following components:
 
-\newpage
+\begin{itemize}
+	\item Disk I/O driver (user mode)
+	\item File Server (user mode)
+	\item Console (user mode)
+	\item Application (user mode)
+\end{itemize}
+
+Additionally, we need the following kernel services for these components:
+\begin{itemize}
+	\item Inter-Process Communication (IPC) (kernel mode)
+	\item Virtual Memory (kernel mode)
+	\item Thread Management (kernel mode)
+\end{itemize}
+
+The pictorial representation of this system is shown in Figure \ref{fig:example}. The application is the user-level process that is running on the system.
+
+\subsection{Control Flow}
+
+When the application wants to read a file from the disk, it populates the IPC buffer with the file name and other parameters then sends an IPC message to the File Server. This IPC call is a blocking call, which means that the application will wait until the File Server replies back. The kernel then schedules the File Server to execute. The File Server receives the IPC and then reads the file from the disk. It sends the file contents back or replies to the application using IPC. The kernel then schedules the application to execute again.
+
+\subsection{Fault Handling}
+
+All components are isolated from one another, which means that if the Console component fails or is compromised, the rest of the system remains unharmed and unaffected. The only thing lost in this scenario is the printing service. This is the advantage of a microkernel architecture - the system is more secure and fault-tolerant since each component runs in its own isolated environment.
+
+
+\section{Future work and Relevant Links}
+\begin{itemize}
+	\item First iteration of Microkernel implementation in gem5 will be available at \url{https://git.cse.iitk.ac.in/deba/microgemos}
+	\item Kernel code of sel4 and tutorial is available at \url{https://github.com/sel4/sel4}
+	\item Futute work includes implementing some more user-level services and testing the system.
+	\item \href{https://docs.google.com/presentation/d/1ugVbGRoHd7K8TiUXV4uv9d5jXUgYuYz5uG2ctlLUjuc/edit?usp=sharing}{Google Slides Link} 
+\end{itemize}
 
 %----------------------------------------------------------------------------------------
 %	 REFERENCES
 %----------------------------------------------------------------------------------------
 
 \printbibliography% Output the bibliography
+
 \end{document}
+
