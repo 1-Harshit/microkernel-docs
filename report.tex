@@ -31,7 +31,7 @@
 
 \runninghead{Building Blocks of a Microkernel} % A shortened article title to appear in the running head, leave this command empty for no running head
 
-\footertext{\textit{Undergraduate Project Report} (2023)} % Text to appear in the footer, leave this command empty for no footer text
+\footertext{\textit{Undergraduate Project Report\,|\,CS396A}} % Text to appear in the footer, leave this command empty for no footer text
 
 \setcounter{page}{1} % The page number of the first page, set this to a higher number if the article is to be part of an issue or larger work
 
@@ -53,7 +53,7 @@
 % Full-width abstract
 \renewcommand{\maketitlehookd}{%
 	\begin{abstract}
-		\noindent Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent porttitor arcu luctus, imperdiet urna iaculis, mattis eros. Pellentesque iaculis odio vel nisl ullamcorper, nec faucibus ipsum molestie. Sed dictum nisl non aliquet porttitor. Etiam vulputate arcu dignissim, finibus sem et, viverra nisl. Aenean luctus congue massa, ut laoreet metus ornare in. Nunc fermentum nisi imperdiet lectus tincidunt vestibulum at ac elit. Nulla mattis nisl eu malesuada suscipit. Aliquam arcu turpis, ultrices sed luctus ac, vehicula id metus. Morbi eu feugiat velit, et tempus augue. Proin ac mattis tortor. Donec tincidunt, ante rhoncus luctus semper, arcu lorem lobortis justo, nec convallis ante quam quis lectus. Aenean tincidunt sodales massa, et hendrerit tellus mattis ac. Sed non pretium nibh. Donec cursus maximus luctus. Vivamus lobortis eros et massa porta porttitor.
+		\noindent In this report, we provide an analysis of the seL4 microkernel, exploring its building blocks and implementation. The seL4 microkernel is designed to minimize the Trusted Computing Base (TCB) and provide a secure system-building base by moving most kernel functionality to non-privileged user mode. This design enables the microkernel to be formally verified, providing an extra level of assurance in its security and reliability. We examine the seL4 kernel codebase and provide an overview of the kernel objects, components, and capabilities. Additionally, we present a design for building a very minimal microkernel. Overall, this report provides a detailed understanding of a microkernel and its building blocks.
 	\end{abstract}
 }
 
@@ -172,10 +172,10 @@ Components are user-mode programs that provide system services and also function
 \item Components are reusable, meaning they can be used in different systems.
 \end{itemize}
 
-\subsection*{Representation of Components}
+\subsection{Representation of Components}
 Components are represented as executables using Thread Control Blocks (TCBs). TCBs are data structures that contain information about the component and are used by the kernel to manage the component's execution. TCBs store information needed for context switching, scheduling, priority, IPC buffer, IPC call, capabilities, etc.
 
-\subsubsection*{Data in TCB}
+\subsubsection{Data in TCB}
 The TCB contains various information, including:
 \begin{itemize}
 \item Architecture-specific TCB state, such as the program counter and stack pointer.
@@ -186,11 +186,38 @@ The TCB contains various information, including:
 \item Scheduling and notification queues.
 \end{itemize}
 
-\subsection*{Capabilities}
+\subsection{Capabilities}
 Capabilities are access rights granted to components to access kernel objects. These access rights are determined at build time and are represented as a data structure in the kernel. Capabilities are configurable at build time and are used to invoke IPC, access memory, etc. Capabilities are essential for implementing the principle of least privilege and determine which component can access which interrupt.
 
 
+\section{Kernel Objects}
 
+Kernel objects are fundamental components of the microkernel that provide essential services such as interrupt handling, inter-process communication (IPC), basic virtual memory management, thread management, and scheduling. These are the only functionalities that the kernel provides directly. All other services are provided by components that incur an IPC overhead. The kernel objects are implemented in privileged mode. We have already seen one kernel object, the TCB, which is used to manage the execution of components. In this section, we will discuss the other kernel objects, namely system calls, IPC, virtual memory management, and interrupt handling.
+
+\subsection{System Calls}
+
+System calls are the means by which a user-level application interacts with the kernel. In a monolithic kernel, system calls are implemented as a set of functions that are called by the application. Each system call serves a specific purpose, such as opening a file, reading from a file, etc. In a microkernel, all these services are provided by components, and thus, only a limited number of system calls are needed.
+
+\subsubsection{Syscalls in seL4} and are needed in a microkernel are as follows:
+\begin{itemize}
+	\item Call: This system call is used to invoke a function in a component. The component is identified by its TCB. The function to be invoked is identified by its index in the component's function table. The arguments to the function are passed in the IPC buffer.
+	\item ReplyRecv: This system call is used to send a message to a component and wait for a reply. The component is identified by its TCB. The message is passed in the IPC buffer. The reply is also passed in the IPC buffer.
+	\item Send: This system call is used to send a message to a component. The component is identified by its TCB. The message is passed in the IPC buffer.
+	\item NBSend: This system call is used to send a message to a component. The component is identified by its TCB. The message is passed in the IPC buffer. This system call does not block the caller.
+	\item Recv: This system call is used to receive a message from a component. The component is identified by its TCB. The message is passed in the IPC buffer.
+	\item NBRecv: This system call is used to receive a message from a component. The component is identified by its TCB. The message is passed in the IPC buffer. This system call does not block the caller.
+	\item Reply: This system call is used to send a reply to a component. The component is identified by its TCB. The reply is passed in the IPC buffer.
+	\item Yield: This system call is used to yield the CPU to another component.
+	\item A microkernel may also need some thread management system calls, such as create thread, delete thread, etc.
+	\item Syscalls are also implemented to manage virtual memory, such as map, unmap, etc. But a very elementary virtual memory management is implemented in the kernel. The rest of the virtual memory management is implemented in the components, accessed by a IPC call.
+\end{itemize}
+
+
+\begin{figure*} % Double column using figure`*`
+	\includegraphics[width=\linewidth]{example.png}
+	\caption{Example of an microkernel based system}
+	\label{fig:example}
+\end{figure*}
 
 \newpage
 
