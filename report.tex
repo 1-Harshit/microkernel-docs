@@ -83,6 +83,8 @@ In this report we will be looking at the building blocks of a microkernel and ho
 	\label{fig:microsemantic}
 \end{figure*}
 
+\newpage
+
 \section{Microkernel Design}
 
 The primary objective of Microkernels is to offer a small and secure kernel that is critical for security. The kernel provides only the essential functionality in kernel mode, and the remaining functionality is provided by user mode programs. This approach helps keep the Trusted Computing Base (TCB) small and secure, which reduces the attack surface. A well-designed microkernel, such as seL4, is typically only about ten thousand lines of source code, in contrast to the Linux kernel, which is approximately 20 million lines of code. This significant difference in size results in a much smaller TCB in a microkernel design, as shown in Figure~\ref{fig:microsemantic}. Let us now consider a microkernel design principle.
@@ -238,14 +240,28 @@ Overall, the seL4 microkernel provides basic primitives for hardware-level virtu
 \subsection{Interrupts}
 In the seL4 microkernel, the root task is initially provided with a single capability that grants access to all interrupt (irq) numbers in the system. Components can register themselves to receive interrupts by communicating with the seL4 kernel, which manages the interrupt handling mechanism. When an interrupt occurs, the kernel sends an IPC message to the registered component. The component can then handle the interrupt and send a reply back to the kernel.
 
-\section{Build System}
+\section{Booting System}
 
+Due to the complexity and interdependence of the components and kernel objects in the seL4 microkernel, they must be properly configured and placed in memory before the system can boot up. This task falls under the responsibility of the boot system, which is responsible for configuring the components and kernel objects, as well as setting metadata for the components.
+
+The boot system ensures that all necessary components and kernel objects are properly linked and configured, and that the resulting binary image is compatible with the underlying hardware. In the microkernel, endpoints, capabilities, and interrupt handlers must be set up for all components while booting up. These components are responsible for handling various system services, and their proper initialization is critical for system stability and security. During boot seL4 also creates root server and idle server.
+
+\subsection{Root Server and Idle Server}
+
+The root server in seL4 microkernel provides a centralized resource management service for the entire system. It is responsible for initializing and managing the system's resources, including hardware devices, memory, and other system services. In addition to resource management, the root server is also responsible for initializing the system, and default interrrupt handling.
+
+The idle server, just like monolithic kernels, is a specialized thead that is responsible for managing system health and reducing power consumption. When no user-level process is scheduled for execution, the idle server remains idle, allowing the system to conserve power and reduce resource consumption.
+
+\section{Essential Blocks}
 
 \begin{figure*} % Double column using figure`*`
 	\includegraphics[width=\linewidth]{example.png}
 	\caption{Example of an microkernel based system}
 	\label{fig:example}
 \end{figure*}
+
+\section{View of a microkernel System}
+
 
 \newpage
 
